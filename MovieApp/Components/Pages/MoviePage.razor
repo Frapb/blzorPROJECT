@@ -1,0 +1,80 @@
+﻿@page "/movie"
+@rendermode InteractiveServer 
+
+<PageTitle>Movie</PageTitle>
+
+
+@if(Loading)
+{
+    <Loading />
+}
+else
+{
+
+    <h1>@movie.NameRU</h1>
+    <h1>@movie.NameUS</h1>
+    <h4>Рейтинг: @movie.Rate</h4>
+    <div style="display: flex; flex-direction: row; width: 100%;">
+
+        <div style="max-height: 410px; overflow-y: auto; margin-right: 20px; flex: 1; border: 1px solid black;">
+            <ActorList actors="movie.Actors" />
+        </div>
+
+        <div style="max-height: 410px; overflow-y: auto; margin-right: 20px; flex: 1; border: 1px solid black;">
+            <TagList tags="movie.Tags" />
+        </div>
+        <div style="max-height: 410px; overflow-y: auto; margin-right: 20px; flex: 1; border: 1px solid black;">
+
+           @if(true) movie.GetMovieImageUrl();
+            <img src=@movie.ImageUrl> 
+        </div>
+
+    </div>
+
+    
+
+    <p></p>
+    <h4>Similiar films:</h4>
+    <button class="btn btn-primary search-btn" @onclick="GenerateSimilarMovies">TOP 10 SIMILAR FILMS</button>
+    @if (GenerateSimilarMoviesInProgress)
+    {
+        <Loading/>
+    }
+    else if (SimilarMovies.Count > 0)
+    {
+        <MoviesList movies="SimilarMovies" />
+    }
+}
+
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string MovieId { get; set; }
+    public Movie? movie { get; set; }
+    public List<Movie> SimilarMovies { get; set; } = new();
+    private bool Loading = true;
+    public bool GenerateSimilarMoviesInProgress = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(() => movie = MoviesDb.getMovieById(MovieId));
+        await GenerateSimilarMovies();
+       
+
+        Loading = false;
+    }
+    private async Task GenerateSimilarMovies()
+
+    {
+
+        if (!GenerateSimilarMoviesInProgress)
+        {
+            GenerateSimilarMoviesInProgress = true;
+            await Task.Run(() => SimilarMovies = MoviesDb.GenerateSimilarForMovie(movie));
+            GenerateSimilarMoviesInProgress = false;
+        } 
+    }
+}
+
+
